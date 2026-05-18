@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   signInAnonymously,
   signInWithCustomToken,
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -28,11 +27,9 @@ import {
   AlertCircle,
   Table2,
   Search,
-  LayoutDashboard,
-  Sparkles
+  LayoutDashboard
 } from 'lucide-react';
 
-// Initialize Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDUetKP1vUm_ofu8hbMq9YSj9T9Tc2vECA",
   authDomain: "dslc-report.firebaseapp.com",
@@ -171,7 +168,7 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
 
-      setSubmitStatus({ type: 'success', message: 'Report submitted brilliantly!' });
+      setSubmitStatus({ type: 'success', message: 'Report submitted successfully!' });
       
       setFormData(prev => ({
         ...prev,
@@ -206,55 +203,52 @@ export default function App() {
 
   if (loadingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex flex-col items-center justify-center">
-        <div className="relative">
-          <div className="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
-          <Loader2 className="w-14 h-14 text-indigo-600 animate-spin relative z-10" />
-        </div>
-        <p className="text-indigo-900 font-medium mt-6 tracking-wide text-lg">Waking up the system...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
+        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+        <p className="text-slate-600 font-medium mt-4">Loading system...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50/50 via-slate-50 to-blue-50/50 font-sans text-slate-800 selection:bg-indigo-100">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 antialiased">
       
-      {/* Sleek Glassmorphism Header */}
-      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-lg border-b border-white shadow-sm shadow-indigo-100/50">
+      {/* Clean Solid Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-16">
             {/* Logo Area */}
-            <div className="flex items-center space-x-3 group cursor-pointer">
-              <div className="bg-gradient-to-tr from-indigo-600 to-blue-500 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform duration-300">
-                <Sparkles size={22} className="text-white" />
+            <div className="flex items-center space-x-2">
+              <div className="bg-indigo-600 p-2 rounded-lg text-white">
+                <FileText size={20} />
               </div>
-              <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-950 to-slate-700 hidden sm:block tracking-tight">
-                DSLC <span className="font-medium text-indigo-600">Report</span>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                DSLC <span className="text-indigo-600 font-medium">Report</span>
               </h1>
             </div>
             
-            {/* Elegant Tab Navigation */}
-            <div className="flex bg-slate-100/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/50 shadow-inner">
+            {/* Minimal Clean Tab Navigation */}
+            <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl">
               <button
                 onClick={() => setActiveTab('submit')}
-                className={`flex items-center px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
                   activeTab === 'submit' 
-                    ? 'bg-white text-indigo-700 shadow-md shadow-slate-200/50 scale-100' 
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 scale-95'
+                    ? 'bg-white text-indigo-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <FileText className="w-4 h-4 mr-2" />
+                <FileText className="w-4 h-4 mr-1.5" />
                 Submit
               </button>
               <button
                 onClick={() => setActiveTab('view')}
-                className={`flex items-center px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                className={`flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
                   activeTab === 'view' 
-                    ? 'bg-white text-indigo-700 shadow-md shadow-slate-200/50 scale-100' 
-                    : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50 scale-95'
+                    ? 'bg-white text-indigo-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                <LayoutDashboard className="w-4 h-4 mr-2" />
+                <LayoutDashboard className="w-4 h-4 mr-1.5" />
                 Dashboard
               </button>
             </div>
@@ -263,45 +257,42 @@ export default function App() {
       </header>
 
       {/* Main Content Container */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Error State if not authenticated */}
+        {/* Offline Warning Banner */}
         {!user && (
-           <div className="bg-red-50/80 backdrop-blur-sm border-l-4 border-red-500 p-5 rounded-2xl shadow-sm mb-8">
+           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-6">
              <div className="flex items-center">
-               <AlertCircle className="h-6 w-6 text-red-500 mr-3" />
-               <p className="text-red-800 font-medium">Connection required. Please check your network.</p>
+               <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+               <p className="text-red-800 font-medium text-sm">Connection required. Please check your network.</p>
              </div>
            </div>
         )}
 
-        {/* Tab Content: Submit */}
+        {}
         {activeTab === 'submit' && user && (
-          <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl shadow-indigo-100/50 border border-white overflow-hidden relative">
-              {/* Decorative top border */}
-              <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500"></div>
-              
-              <div className="px-8 py-8 border-b border-slate-100">
-                <h2 className="text-2xl font-bold text-slate-800 flex items-center tracking-tight">
-                  Field Service Report
+          <div className="max-w-xl mx-auto">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-6 border-b border-slate-150 bg-slate-50/50">
+                <h2 className="text-lg font-bold text-slate-900">
+                  Submit Field Service Report
                 </h2>
-                <p className="text-slate-500 mt-2 font-medium">Log your activity details for the month below.</p>
+                <p className="text-slate-500 text-sm mt-1">Please enter your activity details for the month below.</p>
               </div>
 
-              <div className="p-8">
+              <div className="p-6">
                 {submitStatus && (
-                  <div className={`mb-8 p-4 rounded-2xl flex items-start transform transition-all animate-in fade-in slide-in-from-top-2 ${
+                  <div className={`mb-6 p-4 rounded-xl flex items-start ${
                     submitStatus.type === 'success' 
-                    ? 'bg-emerald-50 border border-emerald-100 shadow-sm shadow-emerald-100/50' 
-                    : 'bg-red-50 border border-red-100 shadow-sm shadow-red-100/50'
+                    ? 'bg-emerald-50 border border-emerald-200' 
+                    : 'bg-red-50 border border-red-200'
                   }`}>
                     {submitStatus.type === 'success' ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 mr-2.5 flex-shrink-0" />
                     ) : (
-                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mr-2.5 flex-shrink-0" />
                     )}
-                    <p className={`text-sm font-semibold ${
+                    <p className={`text-sm font-medium ${
                       submitStatus.type === 'success' ? 'text-emerald-800' : 'text-red-800'
                     }`}>
                       {submitStatus.message}
@@ -309,14 +300,14 @@ export default function App() {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-7">
+                <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Name Input */}
                   <div>
-                    <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2 ml-1">
+                    <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
                       Full Name
                     </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-600 text-slate-400">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                         <User className="h-5 w-5" />
                       </div>
                       <input
@@ -326,20 +317,20 @@ export default function App() {
                         required
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="pl-11 block w-full rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:bg-white text-base py-3 transition-all duration-200"
+                        className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
                         placeholder="e.g. John Doe"
                       />
                     </div>
                   </div>
 
                   {/* Month & Year Selection */}
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="month" className="block text-sm font-semibold text-slate-700 mb-2 ml-1">
+                      <label htmlFor="month" className="block text-sm font-medium text-slate-700 mb-1.5">
                         Month
                       </label>
-                      <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-600 text-slate-400">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                           <Calendar className="h-5 w-5" />
                         </div>
                         <select
@@ -347,7 +338,7 @@ export default function App() {
                           id="month"
                           value={formData.month}
                           onChange={handleInputChange}
-                          className="pl-11 block w-full rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:bg-white text-base py-3 transition-all duration-200 appearance-none"
+                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
                         >
                           {months.map(m => (
                             <option key={m.value} value={m.value}>{m.label}</option>
@@ -357,7 +348,7 @@ export default function App() {
                     </div>
 
                     <div>
-                      <label htmlFor="year" className="block text-sm font-semibold text-slate-700 mb-2 ml-1">
+                      <label htmlFor="year" className="block text-sm font-medium text-slate-700 mb-1.5">
                         Year
                       </label>
                       <select
@@ -365,7 +356,7 @@ export default function App() {
                         id="year"
                         value={formData.year}
                         onChange={handleInputChange}
-                        className="block w-full rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:bg-white text-base py-3 px-4 transition-all duration-200 appearance-none"
+                        className="block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
                       >
                         {years.map(y => (
                           <option key={y} value={y}>{y}</option>
@@ -374,21 +365,17 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="my-8 flex items-center">
-                     <div className="flex-grow h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                     <span className="px-4 text-xs font-semibold text-slate-400 uppercase tracking-widest">Metrics</span>
-                     <div className="flex-grow h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
-                  </div>
+                  <div className="border-t border-slate-100 my-4"></div>
 
                   {/* Activity Metrics */}
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     {/* Hours */}
-                    <div className="relative group">
-                      <label htmlFor="hours" className="block text-sm font-semibold text-slate-700 mb-2 ml-1 text-center sm:text-left">
+                    <div>
+                      <label htmlFor="hours" className="block text-sm font-medium text-slate-700 mb-1.5">
                         Hours
                       </label>
                       <div className="relative">
-                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-slate-400">
+                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                           <Clock className="h-5 w-5" />
                         </div>
                         <input
@@ -400,19 +387,19 @@ export default function App() {
                           required
                           value={formData.hours}
                           onChange={handleInputChange}
-                          className="pl-11 block w-full rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-blue-500 focus:ring-blue-500 focus:bg-white text-base py-3 transition-all duration-200 font-medium"
+                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
                           placeholder="0.0"
                         />
                       </div>
                     </div>
 
                     {/* Return Visits (RV) */}
-                    <div className="relative group">
-                      <label htmlFor="rv" className="block text-sm font-semibold text-slate-700 mb-2 ml-1 text-center sm:text-left whitespace-nowrap">
+                    <div>
+                      <label htmlFor="rv" className="block text-sm font-medium text-slate-700 mb-1.5">
                         Return Visits
                       </label>
                        <div className="relative">
-                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-500 text-slate-400">
+                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                           <Video className="h-5 w-5" />
                         </div>
                         <input
@@ -423,19 +410,19 @@ export default function App() {
                           required
                           value={formData.rv}
                           onChange={handleInputChange}
-                          className="pl-11 block w-full rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:bg-white text-base py-3 transition-all duration-200 font-medium"
+                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
                           placeholder="0"
                         />
                       </div>
                     </div>
 
                     {/* Bible Studies (BS) */}
-                    <div className="relative group">
-                      <label htmlFor="bs" className="block text-sm font-semibold text-slate-700 mb-2 ml-1 text-center sm:text-left whitespace-nowrap">
+                    <div>
+                      <label htmlFor="bs" className="block text-sm font-medium text-slate-700 mb-1.5">
                         Bible Studies
                       </label>
                       <div className="relative">
-                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-purple-500 text-slate-400">
+                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                           <BookOpen className="h-5 w-5" />
                         </div>
                         <input
@@ -446,7 +433,7 @@ export default function App() {
                           required
                           value={formData.bs}
                           onChange={handleInputChange}
-                          className="pl-11 block w-full rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-purple-500 focus:ring-purple-500 focus:bg-white text-base py-3 transition-all duration-200 font-medium"
+                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
                           placeholder="0"
                         />
                       </div>
@@ -454,21 +441,21 @@ export default function App() {
                   </div>
 
                   {/* Submit Button */}
-                  <div className="pt-6 mt-8">
+                  <div className="pt-4">
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="w-full flex justify-center items-center py-4 px-4 rounded-2xl shadow-lg shadow-indigo-200 text-base font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-0.5 transition-all duration-200"
+                      className="w-full flex justify-center items-center py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-150 shadow-sm"
                     >
                       {submitting ? (
                         <>
-                          <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-100" />
-                          Processing...
+                          <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+                          Submitting...
                         </>
                       ) : (
                         <>
-                          <Send className="-ml-1 mr-3 h-5 w-5" />
-                          Submit Final Report
+                          <Send className="-ml-1 mr-2 h-4 w-4" />
+                          Submit Report
                         </>
                       )}
                     </button>
@@ -479,30 +466,30 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab Content: View Reports */}
+        {}
         {activeTab === 'view' && user && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6">
             
             {/* Filters Bar */}
-            <div className="bg-white/80 backdrop-blur-xl p-5 rounded-3xl shadow-lg shadow-indigo-100/40 border border-white flex flex-col sm:flex-row gap-4 items-center">
-              <div className="w-full sm:w-auto flex-grow relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-indigo-600 text-slate-400">
-                  <Search className="h-5 w-5" />
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3 items-center">
+              <div className="w-full sm:w-auto flex-grow relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <Search className="h-4 w-4" />
                 </div>
                 <input
                   type="text"
                   placeholder="Search by name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-11 block w-full rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:bg-white sm:text-sm py-3 transition-all duration-200"
+                  className="pl-9 block w-full rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2 bg-white transition-all"
                 />
               </div>
               
-              <div className="w-full sm:w-auto flex gap-4">
+              <div className="w-full sm:w-auto flex gap-3">
                 <select
                   value={filterMonth}
                   onChange={(e) => setFilterMonth(e.target.value)}
-                  className="block w-full sm:w-44 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:bg-white sm:text-sm py-3 px-4 transition-all duration-200 appearance-none font-medium"
+                  className="block w-full sm:w-40 rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2 px-3 bg-white transition-all font-medium text-slate-700"
                 >
                   <option value="">All Months</option>
                   {months.map(m => (
@@ -513,7 +500,7 @@ export default function App() {
                 <select
                   value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
-                  className="block w-full sm:w-36 rounded-2xl border-slate-200 bg-slate-50/50 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 focus:bg-white sm:text-sm py-3 px-4 transition-all duration-200 appearance-none font-medium"
+                  className="block w-full sm:w-32 rounded-lg border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2 px-3 bg-white transition-all font-medium text-slate-700"
                 >
                   <option value="">All Years</option>
                   {years.map(y => (
@@ -525,36 +512,36 @@ export default function App() {
 
             {/* Summary Cards */}
             {!loadingReports && filteredReports.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-lg shadow-indigo-100/30 border border-white flex items-center transform transition-transform hover:-translate-y-1">
-                   <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100/50 text-blue-600 mr-5 border border-blue-100">
-                     <Clock className="h-7 w-7" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center">
+                   <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 mr-4">
+                     <Clock className="h-6 w-6" />
                    </div>
                    <div>
-                     <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Total Hours</p>
-                     <p className="text-3xl font-black text-slate-800 tracking-tight mt-1">
+                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Hours</p>
+                     <p className="text-2xl font-bold text-slate-900 mt-0.5">
                        {filteredReports.reduce((sum, r) => sum + (parseFloat(r.hours) || 0), 0).toFixed(1)}
                      </p>
                    </div>
                 </div>
-                <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-lg shadow-indigo-100/30 border border-white flex items-center transform transition-transform hover:-translate-y-1">
-                   <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 text-indigo-600 mr-5 border border-indigo-100">
-                     <Video className="h-7 w-7" />
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center">
+                   <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 mr-4">
+                     <Video className="h-6 w-6" />
                    </div>
                    <div>
-                     <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Return Visits</p>
-                     <p className="text-3xl font-black text-slate-800 tracking-tight mt-1">
+                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Return Visits</p>
+                     <p className="text-2xl font-bold text-slate-900 mt-0.5">
                        {filteredReports.reduce((sum, r) => sum + (parseInt(r.rv, 10) || 0), 0)}
                      </p>
                    </div>
                 </div>
-                <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl shadow-lg shadow-indigo-100/30 border border-white flex items-center transform transition-transform hover:-translate-y-1">
-                   <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100/50 text-purple-600 mr-5 border border-purple-100">
-                     <BookOpen className="h-7 w-7" />
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center">
+                   <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 mr-4">
+                     <BookOpen className="h-6 w-6" />
                    </div>
                    <div>
-                     <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Bible Studies</p>
-                     <p className="text-3xl font-black text-slate-800 tracking-tight mt-1">
+                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Bible Studies</p>
+                     <p className="text-2xl font-bold text-slate-900 mt-0.5">
                        {filteredReports.reduce((sum, r) => sum + (parseInt(r.bs, 10) || 0), 0)}
                      </p>
                    </div>
@@ -563,80 +550,69 @@ export default function App() {
             )}
 
             {/* Data Table */}
-            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-indigo-100/40 border border-white overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               {loadingReports ? (
-                 <div className="p-20 flex flex-col items-center justify-center text-slate-500">
-                   <div className="relative mb-6">
-                      <div className="absolute inset-0 bg-indigo-500 rounded-full blur-md opacity-20 animate-pulse"></div>
-                      <Loader2 className="h-10 w-10 animate-spin text-indigo-500 relative z-10" />
-                   </div>
-                   <p className="font-medium">Fetching reports database...</p>
+                 <div className="p-16 flex flex-col items-center justify-center text-slate-500">
+                   <Loader2 className="h-8 w-8 animate-spin text-indigo-500 mb-3" />
+                   <p className="text-sm font-medium">Fetching reports...</p>
                  </div>
               ) : filteredReports.length === 0 ? (
-                <div className="p-20 flex flex-col items-center justify-center text-slate-500 text-center">
-                  <div className="bg-slate-50 p-6 rounded-full mb-6">
-                    <Table2 className="h-12 w-12 text-slate-300" />
-                  </div>
-                  <p className="text-xl font-bold text-slate-800">No reports found</p>
-                  <p className="text-base text-slate-500 mt-2 max-w-sm">Try adjusting your filters or head over to the Submit tab to log a new report.</p>
+                <div className="p-16 flex flex-col items-center justify-center text-slate-500 text-center">
+                  <Table2 className="h-10 w-10 text-slate-300 mb-3" />
+                  <p className="font-bold text-slate-800">No reports found</p>
+                  <p className="text-sm text-slate-500 mt-1">Try adjusting your filters or head to the Submit tab to add a report.</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-100">
-                    <thead className="bg-slate-50/50">
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead className="bg-slate-50">
                       <tr>
-                        <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <th scope="col" className="px-6 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">
                           Publisher
                         </th>
-                        <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <th scope="col" className="px-6 py-3 text-left font-semibold text-slate-600 uppercase text-xs tracking-wider">
                           Period
                         </th>
-                        <th scope="col" className="px-8 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <th scope="col" className="px-6 py-3 text-center font-semibold text-slate-600 uppercase text-xs tracking-wider">
                           Hours
                         </th>
-                        <th scope="col" className="px-8 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <th scope="col" className="px-6 py-3 text-center font-semibold text-slate-600 uppercase text-xs tracking-wider">
                           RV
                         </th>
-                        <th scope="col" className="px-8 py-4 text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <th scope="col" className="px-6 py-3 text-center font-semibold text-slate-600 uppercase text-xs tracking-wider">
                           BS
                         </th>
-                        <th scope="col" className="px-8 py-4 text-right text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        <th scope="col" className="px-6 py-3 text-right font-semibold text-slate-600 uppercase text-xs tracking-wider">
                           Logged On
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-slate-50">
+                    <tbody className="bg-white divide-y divide-slate-100">
                       {filteredReports.map((report) => (
-                        <tr key={report.id} className="hover:bg-indigo-50/30 transition-colors group">
-                          <td className="px-8 py-5 whitespace-nowrap">
+                        <tr key={report.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
-                              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-100 to-blue-50 flex items-center justify-center text-indigo-700 font-bold text-lg mr-4 border border-indigo-100/50 shadow-sm">
+                              <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm mr-3 border border-slate-200">
                                 {report.name.charAt(0).toUpperCase()}
                               </div>
-                              <div className="text-sm font-bold text-slate-800">{report.name}</div>
+                              <div className="font-semibold text-slate-900">{report.name}</div>
                             </div>
                           </td>
-                          <td className="px-8 py-5 whitespace-nowrap">
-                            <div className="text-sm font-medium text-slate-600 bg-slate-100/80 inline-flex px-3 py-1 rounded-lg">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-slate-600 bg-slate-100 px-2.5 py-1 rounded text-xs font-medium">
                               {getMonthName(report.month)} {report.year}
-                            </div>
+                            </span>
                           </td>
-                          <td className="px-8 py-5 whitespace-nowrap text-center">
-                             <div className="text-sm font-bold text-blue-600 bg-blue-50/50 inline-flex px-3 py-1 rounded-lg min-w-[3rem] justify-center">
-                               {report.hours}
-                             </div>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-semibold text-slate-800">
+                             {report.hours}
                           </td>
-                          <td className="px-8 py-5 whitespace-nowrap text-center">
-                            <div className="text-sm font-bold text-indigo-600 bg-indigo-50/50 inline-flex px-3 py-1 rounded-lg min-w-[3rem] justify-center">
-                               {report.rv}
-                             </div>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-semibold text-slate-800">
+                             {report.rv}
                           </td>
-                          <td className="px-8 py-5 whitespace-nowrap text-center">
-                            <div className="text-sm font-bold text-purple-600 bg-purple-50/50 inline-flex px-3 py-1 rounded-lg min-w-[3rem] justify-center">
-                               {report.bs}
-                             </div>
+                          <td className="px-6 py-4 whitespace-nowrap text-center font-semibold text-slate-800">
+                             {report.bs}
                           </td>
-                          <td className="px-8 py-5 whitespace-nowrap text-right text-sm font-medium text-slate-400 group-hover:text-slate-500 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-medium text-slate-400">
                             {report.createdAt ? new Date(report.createdAt.toMillis()).toLocaleDateString() : 'Just now'}
                           </td>
                         </tr>
