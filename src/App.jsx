@@ -3,7 +3,6 @@ import { initializeApp } from 'firebase/app';
 import {
   getAuth,
   signInAnonymously,
-  signInWithCustomToken,
   onAuthStateChanged
 } from 'firebase/auth';
 import {
@@ -27,22 +26,67 @@ import {
   AlertCircle,
   Table2,
   Search,
-  LayoutDashboard
+  LayoutDashboard,
+  WifiOff
 } from 'lucide-react';
 
+// We have replaced your real credentials with dummy configuration keys so you can run the preview.
 const firebaseConfig = {
-  apiKey: "AIzaSyDUetKP1vUm_ofu8hbMq9YSj9T9Tc2vECA",
-  authDomain: "dslc-report.firebaseapp.com",
-  projectId: "dslc-report",
-  storageBucket: "dslc-report.firebasestorage.app",
-  messagingSenderId: "184508511081",
-  appId: "1:184508511081:web:b6fbee6d6aa151146503f8"
+  apiKey: "demo-api-key",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.firebasestorage.app",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:000000000000"
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'dslc-report-app';
+// Detect if we should run in local simulated preview mode
+const isDemoMode = firebaseConfig.apiKey === "demo-api-key" || firebaseConfig.apiKey.startsWith("YOUR_");
+
+let app, auth, db;
+if (!isDemoMode) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (e) {
+    console.warn("Firebase initialization failed, running in Preview Mode.", e);
+  }
+}
+
+// Sample pre-populated reports for the preview environment
+const defaultPreviewReports = [
+  {
+    id: "preview-1",
+    name: "John Doe",
+    month: 5,
+    year: 2026,
+    hours: 12.5,
+    rv: 8,
+    bs: 2,
+    createdAt: { toMillis: () => Date.now() - 3600000 }
+  },
+  {
+    id: "preview-2",
+    name: "Jane Smith",
+    month: 5,
+    year: 2026,
+    hours: 18.0,
+    rv: 12,
+    bs: 4,
+    createdAt: { toMillis: () => Date.now() - 86400000 }
+  },
+  {
+    id: "preview-3",
+    name: "Michael Johnson",
+    month: 4,
+    year: 2026,
+    hours: 8.5,
+    rv: 5,
+    bs: 1,
+    createdAt: { toMillis: () => Date.now() - 172800000 }
+  }
+];
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -50,6 +94,7 @@ export default function App() {
   const [reports, setReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [activeTab, setActiveTab] = useState('submit'); // 'submit' or 'view'
+  const [isLocalMode, setIsLocalMode] = useState(isDemoMode);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -80,16 +125,21 @@ export default function App() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
+  // Handle Authentication Setup (with local fallbacks)
   useEffect(() => {
+    if (isLocalMode) {
+      setUser({ uid: "preview-user-123", isAnonymous: true });
+      setLoadingAuth(false);
+      return;
+    }
+
     const initAuth = async () => {
       try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
+        await signInAnonymously(auth);
       } catch (error) {
-        console.error("Auth error:", error);
+        console.warn("Auth failed or blocked. Activating local preview mode.", error);
+        setIsLocalMode(true);
+        setUser({ uid: "preview-user-123", isAnonymous: true });
       } finally {
         setLoadingAuth(false);
       }
@@ -98,13 +148,16 @@ export default function App() {
     initAuth();
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+      if (currentUser) {
+        setUser(currentUser);
+      }
       setLoadingAuth(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isLocalMode]);
 
+  // Handle Real-Time Database Sync / Mock Database Simulation
   useEffect(() => {
     if (!user) {
       setReports([]);
@@ -113,6 +166,27 @@ export default function App() {
     }
 
     setLoadingReports(true);
+
+    if (isLocalMode) {
+      // Local Mode: Load from LocalStorage or seed with default mock values
+      const localData = localStorage.getItem('dslc_preview_reports');
+      if (localData) {
+        try {
+          const parsed = JSON.parse(localData);
+          setReports(parsed);
+        } catch (e) {
+          setReports(defaultPreviewReports);
+        }
+      } else {
+        setReports(defaultPreviewReports);
+        localStorage.setItem('dslc_preview_reports', JSON.stringify(defaultPreviewReports));
+      }
+      setLoadingReports(false);
+      return;
+    }
+
+    // Cloud Mode: Live synchronization with Firebase Firestore
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'dslc-report-app';
     const reportsRef = collection(db, 'artifacts', appId, 'public', 'data', 'reports');
     const q = query(reportsRef);
 
@@ -131,12 +205,12 @@ export default function App() {
       setReports(reportsData);
       setLoadingReports(false);
     }, (error) => {
-      console.error("Error fetching reports:", error);
-      setLoadingReports(false);
+      console.warn("Firestore access error. Falling back to local preview storage.", error);
+      setIsLocalMode(true);
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, isLocalMode]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -150,12 +224,41 @@ export default function App() {
     setSubmitting(true);
     setSubmitStatus(null);
 
+    const hoursNum = parseFloat(formData.hours) || 0;
+    const rvNum = parseInt(formData.rv, 10) || 0;
+    const bsNum = parseInt(formData.bs, 10) || 0;
+
+    if (isLocalMode) {
+      // Local storage implementation for the Preview Sandbox
+      setTimeout(() => {
+        const newReport = {
+          id: `local-${Date.now()}`,
+          name: formData.name,
+          month: parseInt(formData.month, 10),
+          year: parseInt(formData.year, 10),
+          hours: hoursNum,
+          rv: rvNum,
+          bs: bsNum,
+          submitterId: user.uid,
+          createdAt: { toMillis: () => Date.now() }
+        };
+
+        const updatedReports = [newReport, ...reports];
+        setReports(updatedReports);
+        localStorage.setItem('dslc_preview_reports', JSON.stringify(updatedReports));
+
+        setSubmitStatus({ type: 'success', message: 'Success! Report added to Preview Sandbox.' });
+        setFormData(prev => ({ ...prev, hours: '', rv: '', bs: '' }));
+        setSubmitting(false);
+
+        setTimeout(() => setSubmitStatus(null), 4000);
+      }, 600);
+      return;
+    }
+
     try {
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'dslc-report-app';
       const reportsRef = collection(db, 'artifacts', appId, 'public', 'data', 'reports');
-      
-      const hoursNum = parseFloat(formData.hours) || 0;
-      const rvNum = parseInt(formData.rv, 10) || 0;
-      const bsNum = parseInt(formData.bs, 10) || 0;
 
       await addDoc(reportsRef, {
         name: formData.name,
@@ -169,17 +272,8 @@ export default function App() {
       });
 
       setSubmitStatus({ type: 'success', message: 'Report submitted successfully!' });
-      
-      setFormData(prev => ({
-        ...prev,
-        hours: '',
-        rv: '',
-        bs: ''
-      }));
-
-      setTimeout(() => {
-        setSubmitStatus(null);
-      }, 4000);
+      setFormData(prev => ({ ...prev, hours: '', rv: '', bs: '' }));
+      setTimeout(() => setSubmitStatus(null), 4000);
 
     } catch (error) {
       console.error("Error submitting report:", error);
@@ -189,6 +283,7 @@ export default function App() {
     }
   };
 
+  // Filter application
   const filteredReports = reports.filter(report => {
     const matchesSearch = report.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesMonth = filterMonth ? report.month === parseInt(filterMonth, 10) : true;
@@ -205,7 +300,7 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
         <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-        <p className="text-slate-600 font-medium mt-4">Loading system...</p>
+        <p className="text-slate-600 font-medium mt-4">Setting up database sandbox...</p>
       </div>
     );
   }
@@ -219,15 +314,23 @@ export default function App() {
           <div className="flex justify-between items-center h-16">
             {/* Logo Area */}
             <div className="flex items-center space-x-2">
-              <div className="bg-indigo-600 p-2 rounded-lg text-white">
+              <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-sm">
                 <FileText size={20} />
               </div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                DSLC <span className="text-indigo-600 font-medium">Report</span>
-              </h1>
+              <div>
+                <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">
+                  DSLC <span className="text-indigo-600 font-medium">Report</span>
+                </h1>
+                {isLocalMode && (
+                  <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 inline-flex items-center mt-1">
+                    <WifiOff className="w-3 h-3 mr-1" />
+                    Preview Sandbox
+                  </span>
+                )}
+              </div>
             </div>
             
-            {/* Minimal Clean Tab Navigation */}
+            {/* Tab Navigation */}
             <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl">
               <button
                 onClick={() => setActiveTab('submit')}
@@ -256,30 +359,36 @@ export default function App() {
         </div>
       </header>
 
-      {/* Main Content Container */}
+      {/* Main Content Area */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Offline Warning Banner */}
-        {!user && (
-           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg mb-6">
-             <div className="flex items-center">
-               <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-               <p className="text-red-800 font-medium text-sm">Connection required. Please check your network.</p>
+        {/* Active Local Preview Indicator */}
+        {isLocalMode && (
+           <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg mb-6">
+             <div className="flex items-start">
+               <WifiOff className="h-5 w-5 text-amber-600 mr-2.5 mt-0.5 flex-shrink-0" />
+               <div>
+                 <p className="text-amber-800 font-semibold text-sm">Running in Local Preview Mode</p>
+                 <p className="text-amber-700 text-xs mt-0.5">
+                   The app has successfully loaded into a simulation environment using demo API keys. Your submitted data is stored in your web browser's local memory, making it 100% testable right here!
+                 </p>
+               </div>
              </div>
            </div>
         )}
 
-        {}
-        {activeTab === 'submit' && user && (
+        {/* Form Submission Tab */}
+        {activeTab === 'submit' && (
           <div className="max-w-xl mx-auto">
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-6 border-b border-slate-150 bg-slate-50/50">
+              <div className="px-6 py-6 border-b border-slate-100 bg-slate-50/50">
                 <h2 className="text-lg font-bold text-slate-900">
                   Submit Field Service Report
                 </h2>
                 <p className="text-slate-500 text-sm mt-1">Please enter your activity details for the month below.</p>
               </div>
 
+              {}
               <div className="p-6">
                 {submitStatus && (
                   <div className={`mb-6 p-4 rounded-xl flex items-start ${
@@ -317,7 +426,7 @@ export default function App() {
                         required
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
+                        className="pl-10 block w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
                         placeholder="e.g. John Doe"
                       />
                     </div>
@@ -338,7 +447,7 @@ export default function App() {
                           id="month"
                           value={formData.month}
                           onChange={handleInputChange}
-                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
+                          className="pl-10 block w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
                         >
                           {months.map(m => (
                             <option key={m.value} value={m.value}>{m.label}</option>
@@ -356,7 +465,7 @@ export default function App() {
                         id="year"
                         value={formData.year}
                         onChange={handleInputChange}
-                        className="block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
+                        className="block w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm"
                       >
                         {years.map(y => (
                           <option key={y} value={y}>{y}</option>
@@ -375,7 +484,7 @@ export default function App() {
                         Hours
                       </label>
                       <div className="relative">
-                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                           <Clock className="h-5 w-5" />
                         </div>
                         <input
@@ -387,7 +496,7 @@ export default function App() {
                           required
                           value={formData.hours}
                           onChange={handleInputChange}
-                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
+                          className="pl-10 block w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
                           placeholder="0.0"
                         />
                       </div>
@@ -398,8 +507,8 @@ export default function App() {
                       <label htmlFor="rv" className="block text-sm font-medium text-slate-700 mb-1.5">
                         Return Visits
                       </label>
-                       <div className="relative">
-                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                           <Video className="h-5 w-5" />
                         </div>
                         <input
@@ -410,7 +519,7 @@ export default function App() {
                           required
                           value={formData.rv}
                           onChange={handleInputChange}
-                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
+                          className="pl-10 block w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
                           placeholder="0"
                         />
                       </div>
@@ -422,7 +531,7 @@ export default function App() {
                         Bible Studies
                       </label>
                       <div className="relative">
-                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                           <BookOpen className="h-5 w-5" />
                         </div>
                         <input
@@ -433,7 +542,7 @@ export default function App() {
                           required
                           value={formData.bs}
                           onChange={handleInputChange}
-                          className="pl-10 block w-full rounded-xl border border-slate-350 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
+                          className="pl-10 block w-full rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm py-2.5 bg-white transition-all shadow-sm font-medium"
                           placeholder="0"
                         />
                       </div>
@@ -466,10 +575,11 @@ export default function App() {
           </div>
         )}
 
-        {}
-        {activeTab === 'view' && user && (
+        {/* Dashboard View Tab */}
+        {activeTab === 'view' && (
           <div className="space-y-6">
             
+            {}
             {/* Filters Bar */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3 items-center">
               <div className="w-full sm:w-auto flex-grow relative">
@@ -513,7 +623,7 @@ export default function App() {
             {/* Summary Cards */}
             {!loadingReports && filteredReports.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center animate-fade-in">
                    <div className="p-3 rounded-lg bg-indigo-50 text-indigo-600 mr-4">
                      <Clock className="h-6 w-6" />
                    </div>
@@ -549,6 +659,7 @@ export default function App() {
               </div>
             )}
 
+            {}
             {/* Data Table */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               {loadingReports ? (
