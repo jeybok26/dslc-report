@@ -1,10 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from 'firebase/app';
+import {
+  getAuth,
+  signInAnonymously,
+  signInWithCustomToken,
+  onAuthStateChanged,
+  signOut
+} from 'firebase/auth';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  serverTimestamp
+} from 'firebase/firestore';
+import {
+  FileText,
+  User,
+  Calendar,
+  Clock,
+  BookOpen,
+  Video,
+  Send,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Table2,
+  Trash2,
+  LogOut,
+  RefreshCw,
+  Search
+} from 'lucide-react';
 
-// Your web app's Firebase configuration
+// Initialize Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDUetKP1vUm_ofu8hbMq9YSj9T9Tc2vECA",
   authDomain: "dslc-report.firebaseapp.com",
@@ -14,7 +44,6 @@ const firebaseConfig = {
   appId: "1:184508511081:web:b6fbee6d6aa151146503f8"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
